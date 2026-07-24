@@ -1,25 +1,24 @@
 // Shopify Storefront API client.
-// Set these in .env.local (see .env.example) once your Shopify store exists.
-// Until then, every function below falls back to /lib/mock-data.ts so the
-// site is fully browsable with fake products.
+// Set SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_TOKEN in Vercel env vars.
+// Without these, the site runs on mock data automatically.
 
 import { MOCK_COLLECTIONS, MOCK_PRODUCTS, type Product, type Collection } from './mock-data';
 
-const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN; // e.g. nakhyatra.myshopify.com
-const TOKEN = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
-const API_VERSION = '2024-07';
+const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
+const TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN;
+const API_VERSION = '2024-10';
 
 const HAS_SHOPIFY = Boolean(DOMAIN && TOKEN);
 
 async function shopifyFetch<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
-  const res = await fetch(`https://${DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+  const res = await fetch(`https://${DOMAIN}/api/${API_VERSION}/graphql.json`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': TOKEN as string,
+      'X-Shopify-Storefront-Access-Token': TOKEN as string,
     },
     body: JSON.stringify({ query, variables }),
-    next: { revalidate: 60 }, // ISR: refresh product data every 60s
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) {
@@ -49,11 +48,11 @@ export async function getAllProducts(): Promise<Product[]> {
             description
             productType
             tags
-            priceRangeV2 { minVariantPrice { amount currencyCode } }
+            priceRange { minVariantPrice { amount currencyCode } }
             compareAtPriceRange { minVariantPrice { amount currencyCode } }
             images(first: 5) { edges { node { url altText width height } } }
             variants(first: 25) {
-              edges { node { id title inventoryQuantity selectedOptions { name value } price } }
+              edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
             }
           }
         }
@@ -78,11 +77,11 @@ export async function getProductByHandle(handle: string): Promise<Product | null
         description
         productType
         tags
-        priceRangeV2 { minVariantPrice { amount currencyCode } }
+        priceRange { minVariantPrice { amount currencyCode } }
         compareAtPriceRange { minVariantPrice { amount currencyCode } }
         images(first: 8) { edges { node { url altText width height } } }
         variants(first: 25) {
-          edges { node { id title inventoryQuantity selectedOptions { name value } price } }
+          edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
         }
       }
     }
@@ -108,11 +107,11 @@ export async function getProductsByCollection(handle: string): Promise<Product[]
               description
               productType
               tags
-              priceRangeV2 { minVariantPrice { amount currencyCode } }
+              priceRange { minVariantPrice { amount currencyCode } }
               compareAtPriceRange { minVariantPrice { amount currencyCode } }
               images(first: 5) { edges { node { url altText width height } } }
               variants(first: 25) {
-                edges { node { id title inventoryQuantity selectedOptions { name value } price } }
+                edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
               }
             }
           }
@@ -125,29 +124,10 @@ export async function getProductsByCollection(handle: string): Promise<Product[]
   return data.collection.products.edges.map(({ node }) => mapProduct(node));
 }
 
-export async function getAllCollections(): Promise<Collection[]> {
-  if (!HAS_SHOPIFY) return MOCK_COLLECTIONS;
-
-  const query = /* GraphQL */ `
-    query AllCollections {
-      collections(first: 10) {
-        edges {
-          node {
-            handle
-            title
-            description
-          }
-        }
-      }
-    }
-  `;
-  const data = await shopifyFetch<{ collections: { edges: { node: Collection }[] } }>(query);
-  return data.collections.edges.map(({ node }) => node);
+export function getAllCollections(): Collection[] {
+  return MOCK_COLLECTIONS;
 }
 
-// Creates a Shopify Cart and returns its hosted checkout URL.
-// This is the ONLY payment-related code in the whole app — Razorpay itself
-// is configured inside Shopify admin (Settings > Payments), not here.
 export async function createCheckout(
   lines: {
     merchandiseId: string;
@@ -156,13 +136,9 @@ export async function createCheckout(
   }[]
 ): Promise<string> {
   if (!HAS_SHOPIFY) {
-    // No real store connected yet — nothing to redirect to.
     throw new Error('Connect a Shopify store (.env.local) to enable checkout.');
   }
 
-  // `attributes` is how a custom-uploaded design image travels with the
-  // order — it shows up as a named property on the order in Shopify admin,
-  // no extra backend needed to see or download it.
   const query = /* GraphQL */ `
     mutation CartCreate($lines: [CartLineInput!]!) {
       cartCreate(input: { lines: $lines }) {
@@ -189,18 +165,14 @@ function mapProduct(node: any): Product {
     description: node.description,
     productType: node.productType,
     tags: node.tags ?? [],
-    price: parseFloat(node.priceRangeV2.minVariantPrice.amount),
-    currency: node.priceRangeV2.minVariantPrice.currencyCode,
+    price: parseFloat(node.priceRange.minVariantPrice.amount),
+    currency: node.priceRange.minVariantPrice.currencyCode,
     compareAtPrice: node.compareAtPriceRange?.minVariantPrice?.amount
       ? parseFloat(node.compareAtPriceRange.minVariantPrice.amount)
       : undefined,
     images: node.images.edges.map((e: any) => e.node),
-    variants: node.variants.edges.map((e: any) => ({
-      ...e.node,
-      inventoryQuantity: e.node.inventoryQuantity > 0,
-      price: { amount: e.node.price }
-    })),
-    collectionHandle: '', // real collection membership comes from the query context
+    variants: node.variants.edges.map((e: any) => e.node),
+    collectionHandle: '',
   };
 }
 
