@@ -9,7 +9,7 @@ const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN; // e.g. nakhyatra.myshopify.com
 const TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN;
 const API_VERSION = '2024-10';
 
-const HAS_SHOPIFY = Boolean(DOMAIN && TOKEN);
+const HAS_SHOPIFY = true; // Force real Shopify fetch
 
 async function shopifyFetch<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const res = await fetch(`https://${DOMAIN}/api/${API_VERSION}/graphql.json`, {
