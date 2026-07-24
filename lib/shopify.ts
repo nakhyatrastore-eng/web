@@ -4,7 +4,8 @@
 
 import { MOCK_COLLECTIONS, MOCK_PRODUCTS, type Product, type Collection } from './mock-data';
 
-const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
+// Strip protocol if user accidentally included it (e.g. "https://store.myshopify.com")
+const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN?.replace(/^https?:\/\//, '');
 const TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN;
 const API_VERSION = '2024-10';
 
@@ -37,67 +38,9 @@ async function shopifyFetch<T>(query: string, variables: Record<string, unknown>
 export async function getAllProducts(): Promise<Product[]> {
   if (!HAS_SHOPIFY) return MOCK_PRODUCTS;
 
-  const query = /* GraphQL */ `
-    query AllProducts {
-      products(first: 100) {
-        edges {
-          node {
-            id
-            handle
-            title
-            description
-            productType
-            tags
-            priceRange { minVariantPrice { amount currencyCode } }
-            compareAtPriceRange { minVariantPrice { amount currencyCode } }
-            images(first: 5) { edges { node { url altText width height } } }
-            variants(first: 25) {
-              edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
-            }
-          }
-        }
-      }
-    }
-  `;
-  const data = await shopifyFetch<{ products: { edges: { node: any }[] } }>(query);
-  return data.products.edges.map(({ node }) => mapProduct(node));
-}
-
-export async function getProductByHandle(handle: string): Promise<Product | null> {
-  if (!HAS_SHOPIFY) {
-    return MOCK_PRODUCTS.find((p) => p.handle === handle) ?? null;
-  }
-
-  const query = /* GraphQL */ `
-    query ProductByHandle($handle: String!) {
-      product(handle: $handle) {
-        id
-        handle
-        title
-        description
-        productType
-        tags
-        priceRange { minVariantPrice { amount currencyCode } }
-        compareAtPriceRange { minVariantPrice { amount currencyCode } }
-        images(first: 8) { edges { node { url altText width height } } }
-        variants(first: 25) {
-          edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
-        }
-      }
-    }
-  `;
-  const data = await shopifyFetch<{ product: any }>(query, { handle });
-  return data.product ? mapProduct(data.product) : null;
-}
-
-export async function getProductsByCollection(handle: string): Promise<Product[]> {
-  if (!HAS_SHOPIFY) {
-    return MOCK_PRODUCTS.filter((p) => p.collectionHandle === handle);
-  }
-
-  const query = /* GraphQL */ `
-    query CollectionProducts($handle: String!) {
-      collection(handle: $handle) {
+  try {
+    const query = /* GraphQL */ `
+      query AllProducts {
         products(first: 100) {
           edges {
             node {
@@ -117,11 +60,81 @@ export async function getProductsByCollection(handle: string): Promise<Product[]
           }
         }
       }
-    }
-  `;
-  const data = await shopifyFetch<{ collection: { products: { edges: { node: any }[] } } | null }>(query, { handle });
-  if (!data.collection) return [];
-  return data.collection.products.edges.map(({ node }) => mapProduct(node));
+    `;
+    const data = await shopifyFetch<{ products: { edges: { node: any }[] } }>(query);
+    return data.products.edges.map(({ node }) => mapProduct(node));
+  } catch {
+    return MOCK_PRODUCTS;
+  }
+}
+
+export async function getProductByHandle(handle: string): Promise<Product | null> {
+  if (!HAS_SHOPIFY) {
+    return MOCK_PRODUCTS.find((p) => p.handle === handle) ?? null;
+  }
+
+  try {
+    const query = /* GraphQL */ `
+      query ProductByHandle($handle: String!) {
+        product(handle: $handle) {
+          id
+          handle
+          title
+          description
+          productType
+          tags
+          priceRange { minVariantPrice { amount currencyCode } }
+          compareAtPriceRange { minVariantPrice { amount currencyCode } }
+          images(first: 8) { edges { node { url altText width height } } }
+          variants(first: 25) {
+            edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
+          }
+        }
+      }
+    `;
+    const data = await shopifyFetch<{ product: any }>(query, { handle });
+    return data.product ? mapProduct(data.product) : null;
+  } catch {
+    return MOCK_PRODUCTS.find((p) => p.handle === handle) ?? null;
+  }
+}
+
+export async function getProductsByCollection(handle: string): Promise<Product[]> {
+  if (!HAS_SHOPIFY) {
+    return MOCK_PRODUCTS.filter((p) => p.collectionHandle === handle);
+  }
+
+  try {
+    const query = /* GraphQL */ `
+      query CollectionProducts($handle: String!) {
+        collection(handle: $handle) {
+          products(first: 100) {
+            edges {
+              node {
+                id
+                handle
+                title
+                description
+                productType
+                tags
+                priceRange { minVariantPrice { amount currencyCode } }
+                compareAtPriceRange { minVariantPrice { amount currencyCode } }
+                images(first: 5) { edges { node { url altText width height } } }
+                variants(first: 25) {
+                  edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+    const data = await shopifyFetch<{ collection: { products: { edges: { node: any }[] } } | null }>(query, { handle });
+    if (!data.collection) return [];
+    return data.collection.products.edges.map(({ node }) => mapProduct(node));
+  } catch {
+    return MOCK_PRODUCTS.filter((p) => p.collectionHandle === handle);
+  }
 }
 
 export function getAllCollections(): Collection[] {
