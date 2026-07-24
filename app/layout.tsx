@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, Roboto_Mono } from 'next/font/google';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
 import './globals.css';
@@ -9,8 +9,8 @@ import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import { ourFileRouter } from '@/app/api/uploadthing/core';
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const robotoMono = Roboto_Mono({ subsets: ['latin'], variable: '--font-roboto-mono' });
 
 export const metadata: Metadata = {
   title: 'Nakhyatra — Steel Posters & Phone Cases',
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${robotoMono.variable}`}>
       <body className="font-sans bg-bg text-ink">
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <CartProvider>
