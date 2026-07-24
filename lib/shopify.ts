@@ -7,7 +7,7 @@ import { MOCK_COLLECTIONS, MOCK_PRODUCTS, type Product, type Collection } from '
 // Strip protocol if user accidentally included it (e.g. "https://store.myshopify.com")
 const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN?.replace(/^https?:\/\//, '');
 const TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN;
-const API_VERSION = '2024-10';
+const API_VERSION = '2026-04';
 
 const HAS_SHOPIFY = Boolean(DOMAIN && TOKEN);
 
