@@ -2,10 +2,7 @@ import { notFound } from 'next/navigation';
 import { getAllCollections, getProductsByCollection } from '@/lib/shopify';
 import ProductCard from '@/components/ProductCard';
 
-export async function generateStaticParams() {
-  const collections = await getAllCollections();
-  return collections.map((c) => ({ handle: c.handle }));
-}
+export const dynamic = 'force-dynamic';
 
 export default async function CollectionPage({ params }: { params: { handle: string } }) {
   const collections = await getAllCollections();

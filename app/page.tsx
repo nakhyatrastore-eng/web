@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getAllCollections, getProductsByCollection } from '@/lib/shopify';
 import ProductCard from '@/components/ProductCard';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const collections = await getAllCollections();
   const previews = await Promise.all(

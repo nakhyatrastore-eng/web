@@ -137,8 +137,32 @@ export async function getProductsByCollection(handle: string): Promise<Product[]
   }
 }
 
-export function getAllCollections(): Collection[] {
-  return MOCK_COLLECTIONS;
+export async function getAllCollections(): Promise<Collection[]> {
+  if (!HAS_SHOPIFY) return MOCK_COLLECTIONS;
+
+  try {
+    const query = /* GraphQL */ `
+      query AllCollections {
+        collections(first: 10) {
+          edges {
+            node {
+              handle
+              title
+              description
+            }
+          }
+        }
+      }
+    `;
+    const data = await shopifyFetch<{ collections: { edges: { node: any }[] } }>(query);
+    return data.collections.edges.map(({ node }) => ({
+      handle: node.handle,
+      title: node.title,
+      description: node.description ?? '',
+    }));
+  } catch {
+    return MOCK_COLLECTIONS;
+  }
 }
 
 export async function createCheckout(
