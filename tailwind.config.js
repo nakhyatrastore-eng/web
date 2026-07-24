@@ -14,8 +14,8 @@ module.exports = withUt({
         ink: '#f7f5f0',
         ink2: '#b5b5b5',
         ink3: '#777777',
-        accent: '#d34317',
-        'accent-h': '#e64a19',
+        accent: '#ff0000',
+        'accent-h': '#cc0000',
         border: '#2a2a2a',
       },
       fontFamily: {
