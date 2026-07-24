@@ -6,17 +6,17 @@
 import { MOCK_COLLECTIONS, MOCK_PRODUCTS, type Product, type Collection } from './mock-data';
 
 const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN; // e.g. nakhyatra.myshopify.com
-const TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN;
-const API_VERSION = '2024-10';
+const TOKEN = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
+const API_VERSION = '2024-07';
 
 const HAS_SHOPIFY = Boolean(DOMAIN && TOKEN);
 
 async function shopifyFetch<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
-  const res = await fetch(`https://${DOMAIN}/api/${API_VERSION}/graphql.json`, {
+  const res = await fetch(`https://${DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': TOKEN as string,
+      'X-Shopify-Access-Token': TOKEN as string,
     },
     body: JSON.stringify({ query, variables }),
     next: { revalidate: 60 }, // ISR: refresh product data every 60s
@@ -49,11 +49,11 @@ export async function getAllProducts(): Promise<Product[]> {
             description
             productType
             tags
-            priceRange { minVariantPrice { amount currencyCode } }
+            priceRangeV2 { minVariantPrice { amount currencyCode } }
             compareAtPriceRange { minVariantPrice { amount currencyCode } }
             images(first: 5) { edges { node { url altText width height } } }
             variants(first: 25) {
-              edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
+              edges { node { id title inventoryQuantity selectedOptions { name value } price } }
             }
           }
         }
@@ -78,11 +78,11 @@ export async function getProductByHandle(handle: string): Promise<Product | null
         description
         productType
         tags
-        priceRange { minVariantPrice { amount currencyCode } }
+        priceRangeV2 { minVariantPrice { amount currencyCode } }
         compareAtPriceRange { minVariantPrice { amount currencyCode } }
         images(first: 8) { edges { node { url altText width height } } }
         variants(first: 25) {
-          edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
+          edges { node { id title inventoryQuantity selectedOptions { name value } price } }
         }
       }
     }
@@ -108,11 +108,11 @@ export async function getProductsByCollection(handle: string): Promise<Product[]
               description
               productType
               tags
-              priceRange { minVariantPrice { amount currencyCode } }
+              priceRangeV2 { minVariantPrice { amount currencyCode } }
               compareAtPriceRange { minVariantPrice { amount currencyCode } }
               images(first: 5) { edges { node { url altText width height } } }
               variants(first: 25) {
-                edges { node { id title availableForSale selectedOptions { name value } price { amount } } }
+                edges { node { id title inventoryQuantity selectedOptions { name value } price } }
               }
             }
           }
@@ -189,13 +189,17 @@ function mapProduct(node: any): Product {
     description: node.description,
     productType: node.productType,
     tags: node.tags ?? [],
-    price: parseFloat(node.priceRange.minVariantPrice.amount),
-    currency: node.priceRange.minVariantPrice.currencyCode,
+    price: parseFloat(node.priceRangeV2.minVariantPrice.amount),
+    currency: node.priceRangeV2.minVariantPrice.currencyCode,
     compareAtPrice: node.compareAtPriceRange?.minVariantPrice?.amount
       ? parseFloat(node.compareAtPriceRange.minVariantPrice.amount)
       : undefined,
     images: node.images.edges.map((e: any) => e.node),
-    variants: node.variants.edges.map((e: any) => e.node),
+    variants: node.variants.edges.map((e: any) => ({
+      ...e.node,
+      inventoryQuantity: e.node.inventoryQuantity > 0,
+      price: { amount: e.node.price }
+    })),
     collectionHandle: '', // real collection membership comes from the query context
   };
 }
