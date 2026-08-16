@@ -1,0 +1,10 @@
+.env
+.env*.local
+.next/
+.vercel/
+.codex-temp/
+node_modules/
+test-results/
+playwright-report/
+*.tsbuildinfo
+*.log
