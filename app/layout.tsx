@@ -10,7 +10,6 @@ import Header from '@/components/Header';
 import MobileNav from '@/components/MobileNav';
 import MotionLayer from '@/components/MotionLayer';
 import { ShoppingAssistantProvider } from '@/components/ShoppingAssistant';
-import MaintenanceGate from '@/components/MaintenanceGate';
 
 const fontOutfit = Outfit({
   subsets: ['latin'],
@@ -114,17 +113,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <CartProvider>
           <ShoppingAssistantProvider>
-            <MaintenanceGate>
-              <div className="standard-store-header">
-                <AnnouncementBar />
-                <Header />
-              </div>
-              {children}
-              <div className="standard-store-footer"><Footer /></div>
-              <CartDrawer />
-              <div className="standard-store-mobile-nav"><MobileNav /></div>
-              <MotionLayer />
-            </MaintenanceGate>
+            <div className="standard-store-header">
+              <AnnouncementBar />
+              <Header />
+            </div>
+            {children}
+            <div className="standard-store-footer"><Footer /></div>
+            <CartDrawer />
+            <div className="standard-store-mobile-nav"><MobileNav /></div>
+            <MotionLayer />
             <Analytics />
           </ShoppingAssistantProvider>
         </CartProvider>
