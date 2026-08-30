@@ -1,4 +1,4 @@
-const message = 'Choose your phone model or print size · fulfilled to order · secure checkout';
+const message = 'Precision-fit for select phone models · more models added every drop · printed to order · secure checkout';
 
 export default function AnnouncementBar() {
   return (
