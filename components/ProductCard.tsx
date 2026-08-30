@@ -23,10 +23,10 @@ export default function ProductCard({
   );
 
   return (
-    <article className="group min-w-0">
+    <article className="group flex h-full min-w-0 flex-col">
       <Link
         href={`/products/${product.handle}`}
-        className="block min-w-0"
+        className="block min-w-0 flex-1"
         data-testid="product-card"
         data-cursor="View"
       >
@@ -61,19 +61,22 @@ export default function ProductCard({
         </div>
 
         <div className="px-1 pt-4">
-          <div className="flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:gap-3">
-            <h3 className="line-clamp-2 min-h-[2.4rem] min-w-0 font-display text-base font-bold leading-tight tracking-[-0.025em] text-white transition-colors group-hover:text-accent md:text-lg">
+          <div className="flex items-start justify-between gap-3">
+            {/* Reserve two lines so one-line titles don't shift the quick-add row */}
+            <h3 className="line-clamp-2 min-h-[2.5rem] min-w-0 font-display text-base font-bold leading-tight tracking-[-0.025em] text-white transition-colors group-hover:text-accent md:min-h-[2.8125rem] md:text-lg">
               {product.title}
             </h3>
-            <span className="shrink-0 text-sm font-bold tabular-nums text-white">
-              {hasVariablePrice ? 'From ' : ''}{formatMoney(product.price, product.currency)}
+            <span className="flex shrink-0 flex-col items-end gap-0.5">
+              <span className="text-sm font-bold tabular-nums text-white">
+                {hasVariablePrice ? 'From ' : ''}{formatMoney(product.price, product.currency)}
+              </span>
+              {product.compareAtPrice ? (
+                <s className="text-xs text-ink-3">
+                  {formatMoney(product.compareAtPrice, product.currency)}
+                </s>
+              ) : null}
             </span>
           </div>
-          {product.compareAtPrice ? (
-            <s className="mt-1 block text-xs text-ink-3">
-              {formatMoney(product.compareAtPrice, product.currency)}
-            </s>
-          ) : null}
         </div>
       </Link>
 
@@ -82,10 +85,10 @@ export default function ProductCard({
         data-testid="quick-add"
         onClick={() => openQuickAdd(product)}
         disabled={!product.availableForSale}
-        className="mt-3 flex min-h-11 w-full items-center justify-between rounded-full border border-line-hi px-4 text-xs font-bold text-ink-2 transition-colors hover:border-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-3 flex min-h-11 w-full shrink-0 items-center justify-between rounded-full border border-line-hi px-4 text-xs font-bold text-ink-2 transition-colors hover:border-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <span>{phoneCase && savedDevice ? `Add for ${savedDevice.model}` : phoneCase ? 'Choose phone + add' : product.variants.length > 1 ? 'Choose size + add' : 'Quick add'}</span>
-        <IconPlus className="h-4 w-4" />
+        <span className="truncate">{phoneCase && savedDevice ? `Add for ${savedDevice.model}` : phoneCase ? 'Choose phone + add' : product.variants.length > 1 ? 'Choose size + add' : 'Quick add'}</span>
+        <IconPlus className="ml-2 h-4 w-4 shrink-0" />
       </button>
     </article>
   );
