@@ -2,10 +2,11 @@
   Nakhyatra packing slip v4 (brand-styled) — paste into Shopify Admin →
   Settings → Shipping and delivery → Packing slip template → Edit.
 
-  SETUP (one time):
-  1. Upload the logo in Shopify admin → Content → Files, copy its URL and
-     paste it between the quotes on the logo_url line below. Until then the
-     text wordmark is used.
+  SETUP:
+  1. The logo is already wired to the Shopify Files upload
+     (nakhyatra-logo-print.png — orange N on white, made from the site's
+     app icon). To change it, upload a new file under Content → Files and
+     swap the URL on the shop_logo assign line below.
   2. Phone model / artwork lines only appear on orders placed through
      nakhyatra.store AFTER the storefront started attaching them. Orders
      created as drafts inside Shopify admin do NOT carry them.
@@ -17,7 +18,7 @@
     are spelled out field by field instead
   - images must be hosted by Shopify (line_item.image or Files uploads)
   - "Revert to default" restores the original template
-{% endcomment %}{% assign logo_url = 'PASTE_YOUR_LOGO_FILE_URL_HERE' %}{% if logo_url != 'PASTE_YOUR_LOGO_FILE_URL_HERE' and logo_url != blank %}{% assign shop_logo = logo_url %}{% endif %}<div class="wrapper">
+{% endcomment %}{% comment %}Logo: swap the URL below to change it (Shopify Content → Files){% endcomment %}{% assign shop_logo = 'https://cdn.shopify.com/s/files/1/0692/9632/4674/files/nakhyatra-logo-print.png?v=1788071385' %}{% if shop_logo == blank %}{% assign shop_logo = null %}{% endif %}<div class="wrapper">
   <div class="brand-bar"></div>
 
   <div class="header">
