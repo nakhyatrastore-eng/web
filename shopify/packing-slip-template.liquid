@@ -1,0 +1,127 @@
+{% comment %}
+  Nakhyatra packing slip — paste into Shopify Admin →
+  Settings → Shipping and delivery → Packing slip template → Edit.
+
+  Based on Shopify's packing slip variable reference:
+  - loop items via line_items_in_shipment
+  - line_item.properties renders the line attributes the site attaches
+    (Phone Brand, Phone Model, Artwork URL, crop/note fields)
+  - use Preview template before saving; "Revert to default" restores the original
+{% endcomment %}<div class="wrapper">
+  <div class="header">
+    <div class="shop-title">
+      <p class="to-uppercase">{{ shop.name }}</p>
+    </div>
+    <div class="order-title">
+      <p class="text-align-right">Order {{ order.name }}</p>
+      <p class="text-align-right">{{ order.created_at | date: format: "date" }}</p>
+    </div>
+  </div>
+
+  <div class="customer-addresses">
+    <div class="shipping-address">
+      <p class="subtitle-bold to-uppercase">
+        {% if delivery_method.instructions != blank %}Delivery to{% else %}Ship to{% endif %}
+      </p>
+      <p class="address-text">
+        {% if shipping_address %}
+          {{ shipping_address.name }}{% if shipping_address.company %}<br>{{ shipping_address.company }}{% endif %}<br>
+          {{ shipping_address | format_address }}
+        {% endif %}
+      </p>
+    </div>
+    <div class="billing-address">
+      <p class="subtitle-bold to-uppercase">Bill to</p>
+      <p class="address-text">
+        {% if billing_address %}
+          {{ billing_address.name }}{% if billing_address.company %}<br>{{ billing_address.company }}{% endif %}<br>
+          {{ billing_address | format_address }}
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <hr class="header-hr">
+
+  {% for line_item in line_items_in_shipment %}
+    {% assign phone_brand = '' %}
+    {% assign phone_model = '' %}
+    {% for property in line_item.properties %}
+      {% if property.first == 'Phone Brand' %}{% assign phone_brand = property.last %}{% endif %}
+      {% if property.first == 'Phone Model' %}{% assign phone_model = property.last %}{% endif %}
+    {% endfor %}
+
+    <div class="order-list-item">
+      <div class="item-flex">
+        <div class="item-img">
+          {% if line_item.image != blank %}
+            {{ line_item.image | img_url: '120x120' | img_tag }}
+          {% endif %}
+        </div>
+        <div class="item-details">
+          <p class="item-title">{{ line_item.title }}</p>
+          {% if line_item.variant_title != blank %}
+            <p class="item-sub">{{ line_item.variant_title }}</p>
+          {% endif %}
+          {% if line_item.sku != blank %}
+            <p class="item-sub">SKU: {{ line_item.sku }}</p>
+          {% endif %}
+
+          {% if phone_model != blank or phone_brand != blank %}
+            <p class="make-for">MAKE FOR{% if phone_brand != blank %}: {{ phone_brand }}{% endif %}{% if phone_model != blank %} {{ phone_model }}{% endif %}</p>
+          {% endif %}
+
+          {% for property in line_item.properties %}
+            {% unless property.last == blank or property.first == 'Phone Brand' or property.first == 'Phone Model' %}
+              <p class="item-sub{% if property.first == 'Artwork URL' %} artwork-url{% endif %}">{{ property.first }}: {{ property.last }}</p>
+            {% endunless %}
+          {% endfor %}
+
+          <p class="item-qty">Quantity: {{ line_item.shipping_quantity }} of {{ line_item.quantity }}</p>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  {% unless includes_all_line_items_in_order %}
+    <p class="partial-note">This shipment does not include every item from the order.</p>
+  {% endunless %}
+
+  {% if order.note != blank %}
+    <div class="order-note">
+      <p class="subtitle-bold">Order note</p>
+      <p>{{ order.note }}</p>
+    </div>
+  {% endif %}
+
+  <hr class="header-hr">
+
+  <p class="footer">Thank you for shopping with us!</p>
+  <p class="footer">{{ shop.name }} · {{ shop_address | format_address }}</p>
+  <p class="footer">{{ shop.email }}</p>
+</div>
+
+<style>
+  body { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #121212; font-size: 12px; margin: 0; }
+  .wrapper { max-width: 680px; margin: 0 auto; padding: 28px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .shop-title p { font-size: 22px; font-weight: 800; letter-spacing: .02em; margin: 0; text-transform: uppercase; }
+  .order-title p { margin: 0; color: #555; }
+  .text-align-right { text-align: right; }
+  .customer-addresses { display: flex; justify-content: space-between; gap: 24px; margin-top: 28px; }
+  .subtitle-bold { font-weight: 700; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
+  .address-text { line-height: 1.55; margin: 0; }
+  .header-hr { border: 0; border-top: 1px solid #121212; margin: 22px 0; }
+  .order-list-item { border-bottom: 1px solid #e3e3e3; padding: 14px 0; }
+  .item-flex { display: flex; gap: 14px; }
+  .item-img img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+  .item-title { font-weight: 700; font-size: 13px; margin: 0; }
+  .item-sub { margin: 3px 0 0; font-size: 11px; color: #444; }
+  .artwork-url { word-break: break-all; }
+  .make-for { display: inline-block; font-weight: 800; font-size: 12px; letter-spacing: .04em; margin: 8px 0 2px; padding: 3px 8px; border-radius: 4px; background: #f0f0f0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .item-qty { margin: 6px 0 0; font-size: 11px; color: #555; }
+  .partial-note { margin-top: 14px; font-style: italic; }
+  .order-note { margin-top: 18px; background: #f7f7f7; padding: 10px 12px; border-radius: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .order-note p { margin: 2px 0; }
+  .footer { text-align: center; color: #555; font-size: 11px; margin: 4px 0; }
+</style>
