@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IconHome, IconPhone } from './icons';
+import { IconCreate, IconHome, IconPhone } from './icons';
 
 function PrintIcon({ className = '' }: { className?: string; active?: boolean }) {
   return (
@@ -27,6 +27,7 @@ const navItems = [
   { href: '/', icon: IconHome, label: 'Home' },
   { href: '/collections/phone-cases', icon: IconPhone, label: 'Phone Cases' },
   { href: '/collections/poster-wall', icon: PrintIcon, label: 'Metal Posters' },
+  { href: '/create', icon: IconCreate, label: 'Customize' },
   { href: '/track', icon: TrackIcon, label: 'Tracking' },
 ];
 
@@ -37,7 +38,7 @@ export default function MobileNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-[65] border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden" aria-label="Mobile">
-      <div className="grid h-[68px] grid-cols-4">
+      <div className="grid h-[68px] grid-cols-5">
         {navItems.map(({ href, icon: Icon, label }) => {
           const selected = active(href);
           return (

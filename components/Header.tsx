@@ -35,6 +35,7 @@ export default function Header() {
 
           <nav className="ml-8 hidden items-center gap-7 text-sm font-semibold lg:flex" aria-label="Primary">
             <Link href="/collections/phone-cases" className="text-ink-2 hover:text-white">Shop cases</Link>
+            <Link href="/create" className="font-bold text-accent hover:text-white">Customize</Link>
             <Link href="/collections/poster-wall" className="text-ink-2 hover:text-white">Metal prints</Link>
             <Link href="/track" className="text-ink-2 hover:text-white">Track order</Link>
             <Link href="/policies/contact" className="text-ink-2 hover:text-white">Help</Link>
@@ -60,6 +61,7 @@ export default function Header() {
             <div className="grid gap-2">
               <Link onClick={() => setMenuOpen(false)} href="/collections/phone-cases" className="rounded-2xl bg-accent p-5 font-display text-2xl font-bold text-black">Shop phone cases</Link>
               <Link onClick={() => setMenuOpen(false)} href="/collections/poster-wall" className="rounded-2xl border border-accent/60 bg-accent/10 p-5 font-display text-2xl font-bold text-white">Shop metal wall prints</Link>
+              <Link onClick={() => setMenuOpen(false)} href="/create" className="rounded-2xl border border-accent bg-accent/10 p-5 font-display text-2xl font-bold text-accent">Customize your piece</Link>
               <Link onClick={() => setMenuOpen(false)} href="/track" className="rounded-2xl border border-line bg-surface p-5 text-base font-semibold text-white">Track an order</Link>
               <Link onClick={() => setMenuOpen(false)} href="/policies/contact" className="rounded-2xl border border-line bg-surface p-5 text-base font-semibold text-white">Help & contact</Link>
               <a href={accountUrl} className="rounded-2xl border border-line bg-surface p-5 text-base font-semibold text-white">Customer account</a>

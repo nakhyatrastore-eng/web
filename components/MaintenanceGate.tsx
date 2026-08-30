@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
 const LAUNCH_AT = new Date('2026-08-09T14:32:47+05:30').getTime();
+const FORCE_MAINTENANCE = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'on';
 
 type TimeLeft = {
   days: number;
@@ -15,6 +16,10 @@ type TimeLeft = {
 };
 
 function getTimeLeft(): TimeLeft | null {
+  if (FORCE_MAINTENANCE) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
   const remaining = LAUNCH_AT - Date.now();
 
   if (remaining <= 0) return null;
@@ -37,7 +42,7 @@ function CountdownUnit({ value, label }: { value?: number; label: string }) {
 }
 
 export default function MaintenanceGate({ children }: { children: ReactNode }) {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft | null | undefined>();
+  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(() => getTimeLeft());
 
   useEffect(() => {
     const updateCountdown = () => setTimeLeft(getTimeLeft());
