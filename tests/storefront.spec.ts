@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('home page exposes the complete storefront navigation and honest catalogue state', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: "Designs that don't blend in." })).toBeVisible();
+  await expect(page.locator('[aria-roledescription="carousel"]')).toBeVisible();
   await expect(page.getByTestId('product-card').first()).toBeVisible();
   await expect(page.getByText(/visual preview|ordering closed|mock price|checkout locked/i)).toHaveCount(0);
   await expect(page.getByText(/bundle automatically|eligible shopify offers|never dropshipped|metal-backed build/i)).toHaveCount(0);
