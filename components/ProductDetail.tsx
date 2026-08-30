@@ -233,7 +233,7 @@ export default function ProductDetail({
                 </p>
               ) : null}
 
-              {product.variants.length > 1 ? <ProductOptions variants={product.variants} selectedId={selectedVariantId} onChange={(item) => { setSelectedVariantId(item?.id ?? null); setError(null); }} /> : null}
+              {product.variants.length > 1 ? <ProductOptions variants={product.variants} deviceModels={product.deviceModels} selectedId={selectedVariantId} onChange={(item) => { setSelectedVariantId(item?.id ?? null); setError(null); }} /> : null}
 
               <div className="mt-6 grid gap-2 rounded-2xl border border-line bg-surface p-4 text-xs text-ink-2">
                 <p><strong className="text-white">Made for your selection.</strong> {isPhoneCase ? selectedDevice ? `This order will be prepared for ${selectedDevice.model}.` : 'Choose the exact phone model before adding to cart.' : variant ? `This order will be prepared in ${variant.title}.` : 'Choose a size before adding to cart.'}</p>
