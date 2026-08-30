@@ -739,10 +739,6 @@ summary{
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-2);
-}.device-context-bar{
-  position: sticky;
-  top: var(--header-height);
-  z-index: 45;
 }.home-bridge{
   background:
     linear-gradient(180deg, transparent, rgb(255 102 0 / 0.08)),

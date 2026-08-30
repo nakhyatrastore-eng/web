@@ -6,6 +6,8 @@
   - loop items via line_items_in_shipment
   - line_item.properties renders the line attributes the site attaches
     (Phone Brand, Phone Model, Artwork URL, crop/note fields)
+  - NOTE: the format_address filter renders nothing in packing slips —
+    addresses are spelled out field by field instead
   - use Preview template before saving; "Revert to default" restores the original
 {% endcomment %}<div class="wrapper">
   <div class="header">
@@ -25,8 +27,12 @@
       </p>
       <p class="address-text">
         {% if shipping_address %}
-          {{ shipping_address.name }}{% if shipping_address.company %}<br>{{ shipping_address.company }}{% endif %}<br>
-          {{ shipping_address | format_address }}
+          {{ shipping_address.name }}{% if shipping_address.company != blank %}<br>{{ shipping_address.company }}{% endif %}<br>
+          {{ shipping_address.address1 }}<br>
+          {% if shipping_address.address2 != blank %}{{ shipping_address.address2 }}<br>{% endif %}
+          {{ shipping_address.city }}{% if shipping_address.province != blank %}, {{ shipping_address.province }}{% endif %}{% if shipping_address.zip != blank %} {{ shipping_address.zip }}{% endif %}<br>
+          {{ shipping_address.country }}
+          {% if shipping_address.phone != blank %}<br>{{ shipping_address.phone }}{% endif %}
         {% endif %}
       </p>
     </div>
@@ -34,8 +40,11 @@
       <p class="subtitle-bold to-uppercase">Bill to</p>
       <p class="address-text">
         {% if billing_address %}
-          {{ billing_address.name }}{% if billing_address.company %}<br>{{ billing_address.company }}{% endif %}<br>
-          {{ billing_address | format_address }}
+          {{ billing_address.name }}{% if billing_address.company != blank %}<br>{{ billing_address.company }}{% endif %}<br>
+          {{ billing_address.address1 }}<br>
+          {% if billing_address.address2 != blank %}{{ billing_address.address2 }}<br>{% endif %}
+          {{ billing_address.city }}{% if billing_address.province != blank %}, {{ billing_address.province }}{% endif %}{% if billing_address.zip != blank %} {{ billing_address.zip }}{% endif %}<br>
+          {{ billing_address.country }}
         {% endif %}
       </p>
     </div>
@@ -97,8 +106,8 @@
   <hr class="header-hr">
 
   <p class="footer">Thank you for shopping with us!</p>
-  <p class="footer">{{ shop.name }} · {{ shop_address | format_address }}</p>
-  <p class="footer">{{ shop.email }}</p>
+  <p class="footer">{{ shop.name }} · {{ shop_address.summary }}</p>
+  <p class="footer">{{ shop.email }} · {{ shop.domain }}</p>
 </div>
 
 <style>
