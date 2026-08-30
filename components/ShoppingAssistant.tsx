@@ -36,12 +36,14 @@ type SheetRequest = DeviceRequest | QuickAddRequest;
 
 type ShoppingAssistantValue = {
   savedDevice: DeviceModel | null;
+  deviceLoaded: boolean;
   getCompatibleDevice: (models: DeviceModel[]) => DeviceModel | null;
   openDevicePicker: (
     models: DeviceModel[],
     options?: { title?: string; onSelect?: (device: DeviceModel) => void }
   ) => void;
   openQuickAdd: (product: ProductCardData) => void;
+  rememberDevice: (device: DeviceModel) => void;
 };
 
 const ShoppingAssistantContext = createContext<ShoppingAssistantValue | null>(null);
@@ -54,9 +56,34 @@ function isPhoneCase(product: ProductCardData) {
   return product.productType.toLowerCase().includes('case');
 }
 
+const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+function deviceOptionName(product: ProductCardData) {
+  const names = Array.from(
+    new Set(product.variants.flatMap((variant) => variant.selectedOptions.map((option) => option.name)))
+  );
+  return names.find((name) => /device|phone|model/i.test(name)) ?? null;
+}
+
+// For cases whose variants encode the phone model, the chosen device must
+// select the matching variant — never an arbitrary "first available" one.
+function resolveCaseVariant(product: ProductCardData, device: DeviceModel | null) {
+  const available = product.variants.filter((variant) => variant.availableForSale);
+  if (!available.length) return null;
+  const optionName = deviceOptionName(product);
+  if (device && optionName) {
+    const matching = available.filter((variant) =>
+      variant.selectedOptions.some((option) => option.name === optionName && sameText(option.value, device.model))
+    );
+    if (matching.length) return matching[0];
+  }
+  return available.length === 1 ? available[0] : null;
+}
+
 export function ShoppingAssistantProvider({ children }: { children: React.ReactNode }) {
   const { addToCart, isLoading } = useCart();
   const [savedDevice, setSavedDevice] = useState<DeviceModel | null>(null);
+  const [deviceLoaded, setDeviceLoaded] = useState(false);
   const [sheet, setSheet] = useState<SheetRequest | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [quickModels, setQuickModels] = useState<DeviceModel[]>([]);
@@ -74,6 +101,8 @@ export function ShoppingAssistantProvider({ children }: { children: React.ReactN
         if (stored) setSavedDevice(JSON.parse(stored) as DeviceModel);
       } catch {
         window.localStorage.removeItem(DEVICE_STORAGE_KEY);
+      } finally {
+        setDeviceLoaded(true);
       }
     });
     return () => window.cancelAnimationFrame(frame);
@@ -92,11 +121,15 @@ export function ShoppingAssistantProvider({ children }: { children: React.ReactN
   const getCompatibleDevice = useCallback(
     (models: DeviceModel[]) => {
       if (!savedDevice) return null;
-      return activeModels(models).find(
-        (model) =>
-          model.handle === savedDevice.handle ||
-          (model.brand === savedDevice.brand && model.model === savedDevice.model)
-      ) ?? null;
+      const normalize = (value: string) => value.trim().toLowerCase();
+      return (
+        activeModels(models).find(
+          (model) =>
+            normalize(model.handle) === normalize(savedDevice.handle) ||
+            (normalize(model.brand) === normalize(savedDevice.brand) &&
+              normalize(model.model) === normalize(savedDevice.model))
+        ) ?? null
+      );
     },
     [savedDevice]
   );
@@ -199,11 +232,7 @@ export function ShoppingAssistantProvider({ children }: { children: React.ReactN
   async function addQuickProduct() {
     if (!quickProduct) return;
     const phoneCase = isPhoneCase(quickProduct);
-    const variant = selectedVariant ?? (
-      phoneCase
-        ? quickProduct.variants.find((item) => item.availableForSale) ?? null
-        : null
-    );
+    const variant = selectedVariant ?? (phoneCase ? resolveCaseVariant(quickProduct, quickDevice) : null);
     if (phoneCase && !quickDevice) {
       setSheetError('Choose your exact phone model first.');
       return;
@@ -231,8 +260,8 @@ export function ShoppingAssistantProvider({ children }: { children: React.ReactN
   }
 
   const value = useMemo<ShoppingAssistantValue>(
-    () => ({ savedDevice, getCompatibleDevice, openDevicePicker, openQuickAdd }),
-    [getCompatibleDevice, openDevicePicker, openQuickAdd, savedDevice]
+    () => ({ savedDevice, deviceLoaded, getCompatibleDevice, openDevicePicker, openQuickAdd, rememberDevice }),
+    [deviceLoaded, getCompatibleDevice, openDevicePicker, openQuickAdd, rememberDevice, savedDevice]
   );
 
   return (

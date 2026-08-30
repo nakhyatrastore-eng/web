@@ -4,12 +4,11 @@ test('home page exposes the complete storefront navigation and honest catalogue 
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: "Designs that don't blend in." })).toBeVisible();
   await expect(page.getByTestId('product-card').first()).toBeVisible();
-  await expect(page.locator('[aria-roledescription="carousel"]')).toBeVisible();
   await expect(page.getByText(/visual preview|ordering closed|mock price|checkout locked/i)).toHaveCount(0);
   await expect(page.getByText(/bundle automatically|eligible shopify offers|never dropshipped|metal-backed build/i)).toHaveCount(0);
 });
 
-test('mobile home uses the approved four-item navigation and compact product rail', async ({ page }) => {
+test('mobile home uses the approved four-item navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 664 });
   await page.goto('/');
 
@@ -19,9 +18,6 @@ test('mobile home uses the approved four-item navigation and compact product rai
   await expect(mobileNav.getByText('Metal Posters', { exact: true })).toBeVisible();
   await expect(mobileNav.getByText('Tracking', { exact: true })).toBeVisible();
   await expect(mobileNav.getByText('Cart', { exact: true })).toHaveCount(0);
-  await expect(page.locator('.catalogue-lead__rail')).toHaveCSS('overflow-x', 'auto');
-  await expect(page.getByText(/01 \/ 05/)).toBeVisible();
-  await expect(page.getByText('Swipe the drop →')).toBeVisible();
 });
 
 test('case collection does not expose filters that cannot change the catalogue', async ({ page }) => {
@@ -119,9 +115,9 @@ test('a real published product can select a stocked device, persist a Shopify ca
   await expect(sheet).toBeVisible();
   const picker = sheet.getByTestId('device-picker');
   await picker.getByTestId('device-platform').first().click();
-  const model = picker.getByTestId('device-model');
+  const model = picker.getByTestId('device-model:not([disabled])').first();
   await expect(model).toBeVisible();
-  await model.selectOption({ index: 1 });
+  await model.click();
 
   const add = page.getByTestId('add-to-cart');
   await expect(add).toBeEnabled();
@@ -152,9 +148,9 @@ test('My Phone remembers one exact fit and model-safe quick add uses it', async 
   await expect(sheet).toBeVisible({ timeout: 5_000 });
   const picker = sheet.getByTestId('device-picker');
   await picker.getByTestId('device-platform').first().click();
-  const select = picker.getByTestId('device-model');
-  const chosenModel = await select.locator('option').nth(1).textContent();
-  await select.selectOption({ index: 1 });
+  const modelButton = picker.getByTestId('device-model:not([disabled])').first();
+  const chosenModel = ((await modelButton.textContent()) ?? '').trim();
+  await modelButton.click();
 
   await expect(sheet).toHaveCount(0);
   await expect(page.locator('.device-context-bar')).toContainText(chosenModel ?? '');

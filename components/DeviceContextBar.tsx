@@ -8,17 +8,17 @@ import { IconCheck } from './icons';
 const PROMPT_STORAGE_KEY = 'nakhyatra-device-prompted:v1';
 
 export default function DeviceContextBar({ models }: { models: DeviceModel[] }) {
-  const { getCompatibleDevice, openDevicePicker } = useShoppingAssistant();
+  const { deviceLoaded, getCompatibleDevice, openDevicePicker } = useShoppingAssistant();
   const device = getCompatibleDevice(models);
 
   useEffect(() => {
-    if (device || !models.length || window.localStorage.getItem(PROMPT_STORAGE_KEY)) return;
+    if (!deviceLoaded || device || !models.length || window.localStorage.getItem(PROMPT_STORAGE_KEY)) return;
     window.localStorage.setItem(PROMPT_STORAGE_KEY, 'true');
     const timeout = window.setTimeout(() => {
       openDevicePicker(models, { title: 'Set your phone once' });
     }, 650);
     return () => window.clearTimeout(timeout);
-  }, [device, models, openDevicePicker]);
+  }, [device, deviceLoaded, models, openDevicePicker]);
 
   return (
     <div className="device-context-bar border-b border-line bg-bg/95 backdrop-blur-xl">
