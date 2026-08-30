@@ -1,57 +1,14 @@
-import Link from 'next/link';
-import { getAllCollections, getProductsByCollection } from '@/lib/shopify';
-import ProductCard from '@/components/ProductCard';
-
-export const dynamic = 'force-dynamic';
-
-export default async function HomePage() {
-  const collections = await getAllCollections();
-  const previews = await Promise.all(
-    collections.map(async (c) => ({ collection: c, products: (await getProductsByCollection(c.handle)).slice(0, 4) }))
-  );
-
-  return (
-    <main>
-      <section className="border-b border-border py-20 md:py-28 bg-[radial-gradient(60%_90%_at_85%_10%,rgba(211,67,23,.14),transparent_60%)]">
-        <div className="max-w-[1180px] mx-auto px-6">
-          <div className="kicker mb-4">Original Art · Everyday Objects</div>
-          <h1 className="text-[clamp(42px,7vw,88px)] font-extrabold tracking-tighter leading-[0.95] mb-5">
-            ART THAT<br /><span className="text-accent">SURVIVES</span> YOU.
-          </h1>
-          <p className="max-w-xl text-ink2 text-lg">
-            Steel-printed wall art and precision phone cases. Built to outlast the trend that inspired them.
-          </p>
-          <div className="mt-6 flex gap-3">
-            <Link href="/collections/poster-wall" className="bg-accent hover:bg-accent-h px-6 py-3 kicker tracking-widest">
-              Shop Poster Wall
-            </Link>
-            <Link href="/collections/phone-cases" className="border border-border hover:border-accent px-6 py-3 kicker tracking-widest">
-              Shop Phone Cases
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {previews.map(({ collection, products }) => (
-        <section key={collection.handle} className="border-b border-border py-16">
-          <div className="max-w-[1180px] mx-auto px-6">
-            <div className="flex items-end justify-between mb-8">
-              <div>
-                <div className="eyebrow mb-2">{collection.title}</div>
-                <h2 className="text-3xl font-extrabold tracking-tight">{collection.description}</h2>
-              </div>
-              <Link href={`/collections/${collection.handle}`} className="kicker hover:text-accent">
-                View all →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-              {products.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          </div>
-        </section>
-      ))}
-    </main>
-  );
+import type { Metadata } from "next";
+import CatalogueEmpty from "@/components/CatalogueEmpty";
+import DropHero from "@/components/DropHero";
+import ProductCard from "@/components/ProductCard";
+import { getCollectionByHandle, isShopifyConfigured } from "@/lib/shopify";
+export const metadata: Metadata={title:"Nakhyatra — Objects with a point of view",description:"Designed phone cases and wall pieces, printed to order in India."};
+export default async function HomePage(){
+if(!isShopifyConfigured())return <main className="page-shell py-20"><CatalogueEmpty title="The current edit is being arranged." body="Please check back in a moment."/></main>;
+const [casesCollection,postersCollection]=await Promise.all([getCollectionByHandle("phone-cases"),getCollectionByHandle("poster-wall")]);
+const products=Array.from(new Map([...(casesCollection?.products??[]),...(postersCollection?.products??[])].map(p=>[p.id,p])).values());
+if(!products.length)return <main className="page-shell py-20"><CatalogueEmpty title="The current edit is being arranged." body="Please check back in a moment."/></main>;
+const cases=casesCollection?.products??products;const poster=postersCollection?.products?.[0]??null;
+return <main className="bg-paper text-ink"><DropHero cases={cases} poster={poster}/><section className="mx-auto max-w-[1500px] px-5 py-14 md:px-10 lg:px-16"><p className="text-[10px] font-semibold uppercase tracking-[.28em] text-ink-3">Shop by mood</p><h1 className="mt-2 text-4xl font-semibold tracking-[-.05em] md:text-6xl">The current edit</h1><p className="mt-3 max-w-xl text-sm leading-6 text-ink-2">Choose a design, select your phone model, and we print it when you order.</p><div className="my-10 flex gap-4 overflow-x-auto pb-2">{["Transparent","For girls","For boys","Marvel inspired","DC inspired","Assam abstract"].map(label=><a key={label} href={`/collections/${label.toLowerCase().replaceAll(" ","-")}`} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-ink/10 bg-[#eee7de] p-3 text-center text-[10px] font-semibold uppercase tracking-[.1em]">{label}</a>)}</div><div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">{products.slice(0,12).map((product,index)=><ProductCard key={product.id} product={product} priority={index<4}/>)}</div></section><section className="border-y border-ink/10 bg-[#e8dfd3]"><div className="mx-auto max-w-[1500px] px-5 py-14 md:px-10 lg:px-16"><p className="text-[10px] font-semibold uppercase tracking-[.28em] text-ink-3">The Nakhyatra standard</p><h2 className="mt-3 max-w-2xl text-4xl font-semibold leading-[.98] tracking-[-.05em] md:text-6xl">Printed for your phone. Made for your point of view.</h2></div></section></main>;
 }

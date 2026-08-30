@@ -1,98 +1,109 @@
-# Nakhyatra Store
+# Nakhyatra storefront
 
-Headless storefront: **Next.js (Vercel)** frontend + **Shopify** backend (products, orders, checkout) + **Razorpay** (payments, configured inside Shopify — zero custom payment code in this app).
+Production headless Shopify storefront for Nakhyatra’s curated phone cases and metal wall posters, fulfilled with production partners.
 
-Right now this runs entirely on mock data (`lib/mock-data.ts`) so you can preview design and flow before Shopify exists. Once you connect real credentials, everything switches over automatically — no code changes needed.
+`nakhyatra.store` is the public, indexable Next.js storefront on Vercel. `checkout.nakhyatra.store` is reserved for Shopify-hosted checkout and customer accounts.
 
-## Run locally
+## Architecture
+
+```text
+Customer
+  → nakhyatra.store (Next.js 16 on Vercel)
+      → Shopify Storefront API (catalogue, variants, inventory state, cart)
+      → UploadThing (custom artwork only)
+  → checkout.nakhyatra.store (Shopify checkout and customer account)
+```
+
+The browser never receives the Shopify Storefront token. A Shopify cart ID is stored in an HTTP-only, same-site cookie; cart totals and variant availability are refreshed from Shopify rather than trusted from browser storage. The storefront does not require Shopify's optional aggregate-inventory Storefront scope.
+
+## Local setup
+
+Use Node.js 20.9 or newer.
+
+1. Copy `.env.example` to `.env.local`.
+2. Add a Storefront API token with unauthenticated product, collection, and cart access.
+3. Add the UploadThing token if the custom-artwork studio is enabled.
+4. Install and run:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000 — you'll see the two mock collections (Poster Wall, Phone Cases) fully browsable, add-to-cart working, cart drawer working. Checkout will show an error until Shopify is connected (expected).
+Required production checks:
 
-## Step 1 — Create the Shopify store
-
-1. shopify.com → Start free trial → pick a plan (Basic is enough; you do **not** need Plus for this setup)
-2. Settings > General — set store name, currency (INR)
-3. Products — add your steel posters and phone cases. For phone cases, use **Variants** (option name "Model": iPhone 15, iPhone 15 Pro, etc.) — this maps directly to the variant picker already built into this app
-4. Products > Collections — create two collections with these exact handles so the code matches:
-   - `poster-wall`
-   - `phone-cases`
-   (Set the handle under the collection's "Search engine listing" section if Shopify doesn't auto-match it.)
-
-## Step 2 — Enable Razorpay
-
-1. Shopify admin > Settings > Payments
-2. Browse third-party providers > find Razorpay ("Razorpay Secure" app) > install
-3. Enter your Razorpay Merchant ID / API key / secret (from razorpay.com dashboard, after KYC)
-4. Test in sandbox mode first, then switch live
-
-This is entirely inside Shopify — nothing to build here.
-
-## Step 3 — Get Storefront API credentials
-
-1. Shopify admin > Settings > Apps and sales channels > Develop apps > Create an app
-2. Configure Storefront API scopes: `unauthenticated_read_product_listings`, `unauthenticated_read_product_inventory`, `unauthenticated_read_checkouts`, `unauthenticated_write_checkouts`
-3. Install the app > reveal the **Storefront API access token**
-4. Copy `.env.example` to `.env.local` and fill in:
-   ```
-   SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
-   SHOPIFY_STOREFRONT_TOKEN=shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   ```
-
-## Step 3.5 — Enable custom design uploads (phone cases & posters)
-
-Customers can upload their own photo, see it live in a case/poster mockup on the product page, then add to cart. No positioning/cropping yet (phase 2) — the photo auto-fits.
-
-1. uploadthing.com → sign up → create an app
-2. Copy the token from the API Keys page into `.env.local`:
-   ```
-   UPLOADTHING_TOKEN=your_token_here
-   ```
-3. That's it — `app/api/uploadthing/` already has the upload endpoint wired up
-
-**How the uploaded image reaches you:** it's attached to the Shopify cart line as a custom "Custom Design" property. When the order comes in, open it in Shopify admin — the image URL is right there on the order, no separate dashboard needed. (This is also where your n8n automation could hook in later, if you want it auto-forwarded to a printer.)
-
-**What's customizable right now:** any product with `productType` set to `Phone Case` or `Poster` in Shopify automatically gets the upload + mockup UI on its product page — nothing to configure per-product.
-
-## Step 4 — Deploy to Vercel
-
-1. Push this project to a GitHub repo
-2. vercel.com > Add New Project > import the repo
-3. Add the two env vars from `.env.local` in Vercel's Project Settings > Environment Variables
-4. Deploy
-
-## Step 5 — Point nakhyatra.store at Vercel
-
-1. Vercel > Project > Settings > Domains > add `nakhyatra.store`
-2. Vercel shows you the DNS records to add (A record or CNAME depending on your registrar)
-3. Update those records wherever nakhyatra.store is currently registered
-4. Shopify's own domain/checkout stays on `your-store.myshopify.com` under the hood — customers only ever see `nakhyatra.store` except for the ~10 seconds on the checkout page itself, unless you set up a custom checkout domain (possible later, not required to launch)
-
-## Managing the store day-to-day
-
-Once live, you do NOT touch this code for regular operations. Use the **Shopify app** (iPhone/Android) for:
-- adding/editing products, prices, photos
-- tracking orders, fulfillment, refunds
-- inventory counts
-- viewing sales analytics
-
-You only touch this Next.js project when you want to change the site's design/layout, or add new page types.
-
-## Project structure
-
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run test:e2e
 ```
-app/
-  page.tsx                    → homepage
-  collections/[handle]/       → catalog pages (poster-wall, phone-cases)
-  products/[handle]/          → product detail pages
-  layout.tsx, globals.css     → design system (fonts, colors, tokens)
-components/                   → Header, Footer, ProductCard, CartDrawer, ProductDetail
-lib/
-  shopify.ts                  → Storefront API client + checkout handoff
-  mock-data.ts                → fallback data (remove once Shopify is live)
-  cart-context.tsx            → client-side cart state
-```
+
+## Shopify catalogue setup
+
+### Collections
+
+Create and publish these collections to the **Headless** sales channel:
+
+- `phone-cases`
+- `poster-wall`
+
+Theme pages do not require duplicate products. Set the pinned `custom.theme` product metafield or add a tag such as `theme:cyberpunk`. Supported theme routes are cyberpunk, JDM, samurai, anime, space, dark minimal, and abstract.
+
+### Phone cases
+
+Use one Shopify product per artwork. Make the exact phone model a product option (for example `Phone model` or `Device`), with each supported model represented by a real purchasable variant. The storefront derives its family and searchable model picker from those variants; it never hardcodes availability.
+
+Shopify Bundles can link each design/model variant to an internal blank-shell component so inventory is shared across artworks. Keep the blank component unpublished and publish only sellable design products.
+
+### Posters
+
+Use real Shopify variants for size and finish. Add the products to `poster-wall`. The `/bundle` route lets customers select three available products and adds them to one Shopify cart.
+
+If “buy two, get one” is active, configure it as an automatic Shopify discount. The storefront intentionally does not fake discounted totals.
+
+### Custom products
+
+Create and publish:
+
+- `custom-metal-phone-case`
+- `custom-metal-poster`
+
+The handles can be changed through `SHOPIFY_CUSTOM_CASE_HANDLE` and `SHOPIFY_CUSTOM_POSTER_HANDLE`. Add every supported model, size, and price as a real variant. The custom studio uploads the customer file and attaches the file URL, filename, crop values, and optional note to the Shopify cart line.
+
+### Optional product data
+
+- `reviews.rating` and `reviews.rating_count`: standardized rating metafields written by a review provider and exposed to Storefront API.
+- `custom.theme`: a pinned single-line theme value with Storefront read access.
+- `custom.pairs_with`: a pinned list of product references for case ↔ poster cross-selling. A `pairs:other-handle` tag also works.
+- `new`, `new-drop`, `bestseller`, or `best-seller` tags enable honest product badges.
+
+Ratings, review counts, low-stock badges, compare-at discounts, and sale percentages render only when real Shopify data supports them.
+
+## Checkout domain and SEO
+
+Keep the domain roles separate:
+
+- `nakhyatra.store`: Vercel, canonical storefront, robots file, and sitemap.
+- `checkout.nakhyatra.store`: Shopify checkout and account only.
+
+The app never rewrites Shopify’s signed `checkoutUrl`; it verifies the returned hostname against `SHOPIFY_CHECKOUT_DOMAIN` and then hands the browser to Shopify. Every headless product and collection page emits a `nakhyatra.store` canonical URL, and `/sitemap.xml` contains only headless URLs.
+
+The current Shopify-hosted catalogue routes on `checkout.nakhyatra.store` already return `noindex` and canonicalize to `nakhyatra.store`. In Google Search Console, submit only `https://nakhyatra.store/sitemap.xml`; do not submit Shopify’s checkout-subdomain sitemap. Product-feed apps must use the matching headless product URL rather than the Shopify theme URL.
+
+## Payments, accounts, reviews, and tracking
+
+- Enable UPI, cards, wallets, COD, or partial COD in Shopify/payment-provider settings. The storefront does not claim a method is available until Shopify shows it at checkout.
+- Set `NEXT_PUBLIC_SHOPIFY_ACCOUNT_URL` to the active Shopify customer-account URL.
+- Connect a headless-compatible review provider that writes the standardized review metafields before expecting stars or individual reviews.
+- `/track` uses authenticated Shopify accounts and order-status links. A public order-number/phone lookup should only be added through a vetted tracking provider; the storefront will not expose Admin API order data.
+
+## Deployment
+
+The repository is linked locally to the Vercel project named `web`. Add every variable from `.env.example` to Vercel Production and Preview, using separate tokens where appropriate, then deploy. After deployment:
+
+1. Confirm the Shopify Headless channel publishes the intended products and collections.
+2. Add one real item to cart, reload, change quantity, and open checkout.
+3. Confirm the checkout host is `checkout.nakhyatra.store`.
+4. Submit `https://nakhyatra.store/sitemap.xml` in Search Console.
+5. Revoke and remove any unused Shopify Admin/private token; this storefront does not use one.
