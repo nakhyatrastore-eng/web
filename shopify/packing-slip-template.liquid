@@ -1,66 +1,61 @@
 {% comment %}
-  Nakhyatra packing slip — paste into Shopify Admin →
+  Nakhyatra packing slip v4 (brand-styled) — paste into Shopify Admin →
   Settings → Shipping and delivery → Packing slip template → Edit.
 
   SETUP (one time):
-  1. Upload your logo in Shopify admin → Content → Files, copy its URL
-     and paste it between the quotes on the logo_url line below.
-  2. Phone model / artwork lines only appear on orders placed AFTER the
-     storefront started attaching them — old orders cannot show them.
+  1. Upload the logo in Shopify admin → Content → Files, copy its URL and
+     paste it between the quotes on the logo_url line below. Until then the
+     text wordmark is used.
+  2. Phone model / artwork lines only appear on orders placed through
+     nakhyatra.store AFTER the storefront started attaching them. Orders
+     created as drafts inside Shopify admin do NOT carry them.
 
   Notes from Shopify's packing slip variable reference:
-  - loop items via line_items_in_shipment; line_item.properties carries
-    the storefront attributes (Phone Brand, Phone Model, Artwork URL…)
-  - the format_address filter renders nothing in packing slips —
-    addresses are spelled out field by field instead
+  - loop items via line_items_in_shipment; line_item.properties carries the
+    storefront attributes (Phone Brand, Phone Model, Artwork URL, crops…)
+  - the format_address filter renders nothing in packing slips — addresses
+    are spelled out field by field instead
   - images must be hosted by Shopify (line_item.image or Files uploads)
-  - use Preview template before saving; "Revert to default" restores the original
+  - "Revert to default" restores the original template
 {% endcomment %}{% assign logo_url = 'PASTE_YOUR_LOGO_FILE_URL_HERE' %}{% if logo_url != 'PASTE_YOUR_LOGO_FILE_URL_HERE' and logo_url != blank %}{% assign shop_logo = logo_url %}{% endif %}<div class="wrapper">
+  <div class="brand-bar"></div>
+
   <div class="header">
     <div class="shop-title">
       {% if shop_logo %}
         <img class="shop-logo" src="{{ shop_logo }}" alt="{{ shop.name }}">
       {% else %}
-        <p class="to-uppercase">{{ shop.name }}</p>
+        <p class="wordmark">{{ shop.name }}<span class="wordmark-dot">.</span></p>
       {% endif %}
+      <p class="tagline">Carry it. Live with it.</p>
     </div>
     <div class="order-title">
-      <p class="text-align-right">Order {{ order.name }}</p>
-      <p class="text-align-right">{{ order.created_at | date: format: "date" }}</p>
+      <p class="kicker">Order</p>
+      <p class="order-number">{{ order.name }}</p>
+      <p class="order-date">{{ order.created_at | date: format: "date" }}</p>
     </div>
   </div>
 
-  <div class="customer-addresses">
-    <div class="shipping-address">
-      <p class="subtitle-bold to-uppercase">
-        {% if delivery_method.instructions != blank %}Delivery to{% else %}Ship to{% endif %}
-      </p>
-      <p class="address-text">
-        {% if shipping_address %}
-          {{ shipping_address.name }}{% if shipping_address.company != blank %}<br>{{ shipping_address.company }}{% endif %}<br>
-          {{ shipping_address.address1 }}<br>
-          {% if shipping_address.address2 != blank %}{{ shipping_address.address2 }}<br>{% endif %}
-          {{ shipping_address.city }}{% if shipping_address.province != blank %}, {{ shipping_address.province }}{% endif %}{% if shipping_address.zip != blank %} {{ shipping_address.zip }}{% endif %}<br>
-          {{ shipping_address.country }}
-          {% if shipping_address.phone != blank %}<br>{{ shipping_address.phone }}{% endif %}
-        {% endif %}
-      </p>
-    </div>
-    <div class="billing-address">
-      <p class="subtitle-bold to-uppercase">Bill to</p>
-      <p class="address-text">
-        {% if billing_address %}
-          {{ billing_address.name }}{% if billing_address.company != blank %}<br>{{ billing_address.company }}{% endif %}<br>
-          {{ billing_address.address1 }}<br>
-          {% if billing_address.address2 != blank %}{{ billing_address.address2 }}<br>{% endif %}
-          {{ billing_address.city }}{% if billing_address.province != blank %}, {{ billing_address.province }}{% endif %}{% if billing_address.zip != blank %} {{ billing_address.zip }}{% endif %}<br>
-          {{ billing_address.country }}
-        {% endif %}
-      </p>
-    </div>
+  <div class="ship-block">
+    <p class="kicker">
+      {% if delivery_method.instructions != blank %}Deliver to{% else %}Ship to{% endif %}
+    </p>
+    <p class="address-text">
+      {% if shipping_address %}
+        <span class="address-name">{{ shipping_address.name }}</span>
+        {% if shipping_address.company != blank %}<br>{{ shipping_address.company }}{% endif %}<br>
+        {{ shipping_address.address1 }}<br>
+        {% if shipping_address.address2 != blank %}{{ shipping_address.address2 }}<br>{% endif %}
+        {{ shipping_address.city }}{% if shipping_address.province != blank %}, {{ shipping_address.province }}{% endif %}{% if shipping_address.zip != blank %} {{ shipping_address.zip }}{% endif %}<br>
+        {{ shipping_address.country }}
+        {% if shipping_address.phone != blank %}<br><span class="address-phone">{{ shipping_address.phone }}</span>{% endif %}
+      {% else %}
+        <span class="muted">No shipping address on this order.</span>
+      {% endif %}
+    </p>
   </div>
 
-  <hr class="header-hr">
+  <hr class="rule">
 
   {% for line_item in line_items_in_shipment %}
     {% assign phone_brand = '' %}
@@ -83,7 +78,7 @@
             <p class="item-sub">{{ line_item.variant_title }}</p>
           {% endif %}
           {% if line_item.sku != blank %}
-            <p class="item-sub">SKU: {{ line_item.sku }}</p>
+            <p class="item-sub">SKU · {{ line_item.sku }}</p>
           {% endif %}
 
           {% if phone_model != blank or phone_brand != blank %}
@@ -108,40 +103,52 @@
 
   {% if order.note != blank %}
     <div class="order-note">
-      <p class="subtitle-bold">Order note</p>
+      <p class="kicker">Order note</p>
       <p>{{ order.note }}</p>
     </div>
   {% endif %}
 
-  <hr class="header-hr">
+  <hr class="rule">
 
-  <p class="footer">Thank you for shopping with us!</p>
-  <p class="footer">{{ shop.name }} · {{ shop_address.summary }}</p>
-  <p class="footer">{{ shop.email }}</p>
+  <div class="footer">
+    <p class="footer-brand">Printed to order · Track at nakhyatra.store/track</p>
+    <p class="footer-line">{{ shop.name }} · {{ shop_address.summary }}</p>
+    <p class="footer-line">{{ shop.email }}</p>
+  </div>
 </div>
 
 <style>
-  body { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #121212; font-size: 12px; margin: 0; }
-  .wrapper { max-width: 680px; margin: 0 auto; padding: 28px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; }
-  .shop-title p { font-size: 22px; font-weight: 800; letter-spacing: .02em; margin: 0; text-transform: uppercase; }
-  .shop-logo { max-width: 220px; max-height: 64px; object-fit: contain; }
-  .order-title p { margin: 0; color: #555; }
-  .text-align-right { text-align: right; }
-  .customer-addresses { display: flex; justify-content: space-between; gap: 24px; margin-top: 28px; }
-  .subtitle-bold { font-weight: 700; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
+  /* Brand tokens: accent #FF6600 · ink #090909 on paper · Outfit type */
+  body { font-family: 'Outfit', -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #090909; font-size: 12px; margin: 0; }
+  .wrapper { max-width: 680px; margin: 0 auto; padding: 26px 28px 30px; }
+  .brand-bar { height: 6px; background: #FF6600; border-radius: 999px; margin-bottom: 24px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+  .wordmark { font-size: 24px; font-weight: 800; letter-spacing: .02em; margin: 0; text-transform: uppercase; }
+  .wordmark-dot { color: #FF6600; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .shop-logo { max-width: 210px; max-height: 58px; object-fit: contain; }
+  .tagline { margin: 4px 0 0; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #8C877E; }
+  .kicker { margin: 0 0 5px; font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: #FF6600; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .order-title { text-align: right; }
+  .order-number { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: .01em; }
+  .order-date { margin: 2px 0 0; font-size: 11px; color: #8C877E; }
+  .ship-block { margin-top: 26px; }
   .address-text { line-height: 1.55; margin: 0; }
-  .header-hr { border: 0; border-top: 1px solid #121212; margin: 22px 0; }
-  .order-list-item { border-bottom: 1px solid #e3e3e3; padding: 14px 0; }
+  .address-name { font-weight: 700; font-size: 13px; }
+  .address-phone { color: #444; }
+  .muted { color: #8C877E; }
+  .rule { border: 0; border-top: 1px solid #090909; margin: 22px 0; }
+  .order-list-item { border-bottom: 1px solid #E7E2D8; padding: 14px 0; }
   .item-flex { display: flex; gap: 14px; }
-  .item-img img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
-  .item-title { font-weight: 700; font-size: 13px; margin: 0; }
-  .item-sub { margin: 3px 0 0; font-size: 11px; color: #444; }
+  .item-img img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid #E7E2D8; }
+  .item-title { font-weight: 700; font-size: 13.5px; margin: 0; }
+  .item-sub { margin: 3px 0 0; font-size: 11px; color: #55514A; }
   .artwork-url { word-break: break-all; }
-  .make-for { display: inline-block; font-weight: 800; font-size: 12px; letter-spacing: .04em; margin: 8px 0 2px; padding: 3px 8px; border-radius: 4px; background: #f0f0f0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .item-qty { margin: 6px 0 0; font-size: 11px; color: #555; }
-  .partial-note { margin-top: 14px; font-style: italic; }
-  .order-note { margin-top: 18px; background: #f7f7f7; padding: 10px 12px; border-radius: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .make-for { display: inline-block; margin: 9px 0 2px; padding: 4px 10px; border-radius: 999px; background: #FF6600; color: #090909; font-weight: 800; font-size: 11.5px; letter-spacing: .08em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .item-qty { margin: 7px 0 0; font-size: 11px; color: #55514A; }
+  .partial-note { margin-top: 14px; font-style: italic; color: #55514A; }
+  .order-note { margin-top: 18px; border: 1px solid #FF6600; border-radius: 10px; padding: 10px 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .order-note p { margin: 2px 0; }
-  .footer { text-align: center; color: #555; font-size: 11px; margin: 4px 0; }
+  .footer { text-align: center; margin-top: 8px; }
+  .footer-brand { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #FF6600; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .footer-line { margin: 2px 0; font-size: 10.5px; color: #55514A; }
 </style>
